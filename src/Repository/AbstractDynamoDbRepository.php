@@ -10,10 +10,9 @@ use Aws\DynamoDb\Marshaler;
 use Aws\Result;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
-class AbstractDynamoDbRepository
+abstract class AbstractDynamoDbRepository
 {
     /** @var DynamoDbClient */
     protected $dynamoDbClient;
@@ -23,7 +22,6 @@ class AbstractDynamoDbRepository
 
     /** @var SerializerInterface */
     protected $serializer;
-
 
     /**
      * @param DynamoDbClient $dynamoDbClient
@@ -48,7 +46,7 @@ class AbstractDynamoDbRepository
             [
                 'table_name' => null,
                 'key' => null,
-                'class_name' => null
+                'class_name' => null,
             ]
         );
         $resolver->setAllowedTypes('key', 'array');
@@ -64,7 +62,7 @@ class AbstractDynamoDbRepository
                 ]
             );
 
-            if($result['Item'] === null) {
+            if ($result['Item'] === null) {
                 return null;
             }
 
@@ -99,9 +97,11 @@ class AbstractDynamoDbRepository
     protected function saveObject($object, array $options)
     {
         $resolver = new OptionsResolver();
-        $resolver->setDefaults([
-            'table_name' => null
-        ]);
+        $resolver->setDefaults(
+            [
+                'table_name' => null,
+            ]
+        );
         $options = $resolver->resolve($options);
 
         $marshaler = new Marshaler();
@@ -115,7 +115,8 @@ class AbstractDynamoDbRepository
         );
     }
 
-    protected function deleteByKey(array $options) {
+    protected function deleteByKey(array $options)
+    {
         $resolver = new OptionsResolver();
         $resolver->setDefaults(
             [
@@ -128,9 +129,11 @@ class AbstractDynamoDbRepository
 
         $marshaller = new Marshaler();
 
-        $this->dynamoDbClient->deleteItem([
-            'TableName' => $options['table_name'],
-            'Key' => $marshaller->marshalJson(json_encode($options['key']))
-        ]);
+        $this->dynamoDbClient->deleteItem(
+            [
+                'TableName' => $options['table_name'],
+                'Key' => $marshaller->marshalJson(json_encode($options['key'])),
+            ]
+        );
     }
 }
