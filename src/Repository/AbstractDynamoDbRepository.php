@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Repository;
+namespace VictorMacko\Repository;
 
 
 use Aws\DynamoDb\DynamoDbClient;
