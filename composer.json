@@ -1,8 +1,14 @@
 {
     "name": "victormacko/dynamodb-repository",
     "description": "A helper library for retrieving and writing data in/out of AWS DynamoDB",
-    "type": "project",
-    "license": "proprietary",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Victor Macko",
+            "email": "victor_macko@hotmail.com"
+        }
+    ],
     "require": {
         "php": ">=7.3",
         "aws/aws-sdk-php-symfony": "^2.2",
