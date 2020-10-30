@@ -10,6 +10,7 @@ use Aws\DynamoDb\Marshaler;
 use Aws\Result;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 abstract class AbstractDynamoDbRepository
@@ -47,9 +48,13 @@ abstract class AbstractDynamoDbRepository
                 'table_name' => null,
                 'key' => null,
                 'class_name' => null,
+                'denormalize_context' => [],
             ]
         );
+        $resolver->setAllowedTypes('table_name', 'string');
         $resolver->setAllowedTypes('key', 'array');
+        $resolver->setAllowedTypes('class_name', 'string');
+        $resolver->setAllowedTypes('denormalize_context', 'array');
         $options = $resolver->resolve($options);
 
         try {
@@ -66,14 +71,28 @@ abstract class AbstractDynamoDbRepository
                 return null;
             }
 
-            return $this->serializer->denormalize($marshaller->unmarshalItem($result['Item']), $options['class_name']);
+            return $this->serializer->denormalize(
+                $marshaller->unmarshalItem($result['Item']),
+                $options['class_name'],
+                null,
+                $options['denormalize_context']
+            );
         } catch (DynamoDbException $e) {
             return null;
         }
     }
 
-    protected function convertResultsToObjectArray(Result $result, string $className)
+    protected function convertResultsToObjectArray(Result $result, string $className, array $options = [])
     {
+        $resolver = new OptionsResolver();
+        $resolver->setDefaults(
+            [
+                'denormalize_context' => [],
+            ]
+        );
+        $resolver->setAllowedTypes('denormalize_context', 'array');
+        $options = $resolver->resolve($options);
+
         $marshaler = new Marshaler();
 
         $ret = [];
@@ -88,7 +107,7 @@ abstract class AbstractDynamoDbRepository
                 [ObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true]
             );
             */
-            $ret[] = $this->serializer->denormalize($rowData, $className);
+            $ret[] = $this->serializer->denormalize($rowData, $className, null, $options['denormalize_context']);
         }
 
         return $ret;
@@ -100,12 +119,15 @@ abstract class AbstractDynamoDbRepository
         $resolver->setDefaults(
             [
                 'table_name' => null,
+                'serialize_context' => [],
             ]
         );
+        $resolver->setAllowedTypes('table_name', 'string');
+        $resolver->setAllowedTypes('serialize_context', 'array');
         $options = $resolver->resolve($options);
 
         $marshaler = new Marshaler();
-        $json = $this->serializer->serialize($object, 'json');
+        $json = $this->serializer->serialize($object, 'json', $options['serialize_context']);
 
         $this->dynamoDbClient->putItem(
             [
@@ -113,6 +135,48 @@ abstract class AbstractDynamoDbRepository
                 'Item' => $marshaler->marshalJson($json),
             ]
         );
+    }
+
+    protected function saveObjects(array $objects, array $options)
+    {
+        $resolver = new OptionsResolver();
+        $resolver->setDefaults(
+            [
+                'table_name' => null,
+                'serialize_context' => ['json_encode_options' => JSON_INVALID_UTF8_IGNORE],
+            ]
+        );
+        $resolver->setAllowedTypes('table_name', 'string');
+        $resolver->setAllowedTypes('serialize_context', 'array');
+        $options = $resolver->resolve($options);
+
+        $marshaler = new Marshaler();
+
+        foreach (array_chunk($objects, 25) as $objChunk) {
+            $items = [];
+            foreach ($objChunk as $object) {
+                try {
+                    $json = $this->serializer->serialize($object, 'json', $options['serialize_context']);
+                    $items[] = [
+                        'PutRequest' => [
+                            'Item' => $marshaler->marshalJson($json),
+                        ],
+                    ];
+                } catch (NotEncodableValueException $e) {
+                    $this->logger->error('Cannot run saveObjects - '.get_class($object).', '.$e->getMessage());
+                }
+            }
+
+            if (count($items) > 0) {
+                $this->dynamoDbClient->batchWriteItem(
+                    [
+                        'RequestItems' => [
+                            $options['table_name'] => $items,
+                        ],
+                    ]
+                );
+            }
+        }
     }
 
     protected function deleteByKey(array $options)
@@ -124,6 +188,7 @@ abstract class AbstractDynamoDbRepository
                 'key' => null,
             ]
         );
+        $resolver->setAllowedTypes('table_name', 'string');
         $resolver->setAllowedTypes('key', 'array');
         $options = $resolver->resolve($options);
 
