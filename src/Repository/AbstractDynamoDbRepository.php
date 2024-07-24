@@ -12,6 +12,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractDynamoDbRepository
 {
@@ -28,9 +29,9 @@ abstract class AbstractDynamoDbRepository
      * @param DynamoDbClient $dynamoDbClient
      * @param LoggerInterface $logger
      * @param SerializerInterface $serializer
-     * @required
      */
-    public function setServices(
+    #[Required]
+    public function setRepoServices(
         DynamoDbClient $dynamoDbClient,
         LoggerInterface $logger,
         SerializerInterface $serializer
