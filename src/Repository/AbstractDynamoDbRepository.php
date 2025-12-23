@@ -12,6 +12,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractDynamoDbRepository
 {
@@ -28,8 +29,8 @@ abstract class AbstractDynamoDbRepository
      * @param DynamoDbClient $dynamoDbClient
      * @param LoggerInterface $logger
      * @param SerializerInterface $serializer
-     * @required
      */
+    #[Required]
     public function setServices(
         DynamoDbClient $dynamoDbClient,
         LoggerInterface $logger,
@@ -82,7 +83,7 @@ abstract class AbstractDynamoDbRepository
         }
     }
 
-    protected function convertResultsToObjectArray(Result $result, string $className, array $options = [])
+    protected function convertResultsToObjectArray(Result $result, string $className, array $options = []): array
     {
         $resolver = new OptionsResolver();
         $resolver->setDefaults(
@@ -113,7 +114,7 @@ abstract class AbstractDynamoDbRepository
         return $ret;
     }
 
-    protected function saveObject($object, array $options)
+    protected function saveObject($object, array $options): void
     {
         $resolver = new OptionsResolver();
         $resolver->setDefaults(
@@ -137,7 +138,7 @@ abstract class AbstractDynamoDbRepository
         );
     }
 
-    protected function saveObjects(array $objects, array $options)
+    protected function saveObjects(array $objects, array $options): void
     {
         $resolver = new OptionsResolver();
         $resolver->setDefaults(
@@ -179,7 +180,7 @@ abstract class AbstractDynamoDbRepository
         }
     }
 
-    protected function deleteByKey(array $options)
+    protected function deleteByKey(array $options): void
     {
         $resolver = new OptionsResolver();
         $resolver->setDefaults(

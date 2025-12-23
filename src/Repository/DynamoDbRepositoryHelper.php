@@ -12,17 +12,17 @@ use Aws\Result;
  */
 class DynamoDbRepositoryHelper extends AbstractDynamoDbRepository
 {
-    public function convertResultsToObjectArray(Result $result, string $className)
+    public function convertResultsToObjectArray(Result $result, string $className, array $options = []): array
     {
-        return parent::convertResultsToObjectArray($result, $className);
+        return parent::convertResultsToObjectArray($result, $className, $options);
     }
 
-    public function deleteByKey(array $options)
+    public function deleteByKey(array $options): void
     {
         parent::deleteByKey($options);
     }
 
-    public function saveObject($object, array $options)
+    public function saveObject($object, array $options): void
     {
         parent::saveObject($object, $options);
     }
