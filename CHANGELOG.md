@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.1 (unreleased)
+## 1.1.1 (2026-11-13)
 
 Dependency fixes only: no code changes (review F6).
 
