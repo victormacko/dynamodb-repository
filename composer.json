@@ -11,17 +11,16 @@
     ],
     "require": {
         "php": ">=8.0",
-        "aws/aws-sdk-php-symfony": "^2.2",
-        "ramsey/uuid": "^3.9 || ^4.0",
-        "symfony/monolog-bundle": "*",
-        "symfony/options-resolver": "^5.0||^6.0||7.0||8.0",
-        "symfony/serializer-pack": "*"
+        "aws/aws-sdk-php": "^3.300",
+        "psr/log": "^1.1 || ^2.0 || ^3.0",
+        "symfony/options-resolver": "^5.4 || ^6.4 || ^7.0 || ^8.0",
+        "symfony/serializer": "^5.4 || ^6.4 || ^7.0 || ^8.0",
+        "symfony/service-contracts": "^2.5 || ^3.0"
     },
     "require-dev": {
-        "symfony/debug-pack": "*",
-        "symfony/phpunit-bridge": "*",
-        "symfony/profiler-pack": "*",
-        "symfony/test-pack": "*"
+        "phpunit/phpunit": "^11.0 || ^12.0",
+        "symfony/property-access": "^6.4 || ^7.0 || ^8.0",
+        "symfony/property-info": "^6.4 || ^7.0 || ^8.0"
     },
     "config": {
         "preferred-install": {
@@ -39,5 +38,6 @@
             "VictorMacko\\Tests\\": "tests/"
         }
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

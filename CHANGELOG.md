@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.1 (unreleased)
+
+Dependency fixes only: no code changes (review F6).
+
+- `symfony/options-resolver` was required as `^5.0||^6.0||7.0||8.0`. Composer reads a bare `7.0` or `8.0` as an exact version, so Symfony 7 and 8 apps were held at 7.0.0 or 8.0.0. It is now `^5.4 || ^6.4 || ^7.0 || ^8.0`.
+- Requires what the code uses: `aws/aws-sdk-php`, `psr/log`, `symfony/serializer`, `symfony/options-resolver` and `symfony/service-contracts` (for `#[Required]`).
+- No longer requires `aws/aws-sdk-php-symfony`, `symfony/monolog-bundle`, `symfony/serializer-pack` or `ramsey/uuid`, which the library never used. **An app that relied on getting one of these through this package must now require it itself.** `vte-addon-risk-assessments` already requires all of them directly.
+- The dev dependencies are now just PHPUnit plus the serializer's property-access/property-info, instead of four Symfony packs. `prefer-stable` is set.
+
 ## 1.1.0 (2026-11-13)
 
 No method signature has changed and every new option is optional. Two behaviour changes are bug fixes that callers may notice; read **Upgrading** first. Finding numbers refer to `DYNAMODB-REVIEW.md`.
