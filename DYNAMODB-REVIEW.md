@@ -9,9 +9,9 @@ State of the repo at review time:
 
 ## Status (updated 2026-11-13)
 
-1.1.0 is implemented on branch `release/1.1.0`. It is not tagged, pushed or published yet. The details are in `CHANGELOG.md`. The tests run with `vendor/bin/phpunit` (36 tests on `Aws\MockHandler`, no network).
+1.1.0 is released: tag `v1.1.0`, merged into `master` and pushed on 2026-11-13. The details are in `CHANGELOG.md`. The tests run with `vendor/bin/phpunit` (36 tests on `Aws\MockHandler`, no network).
 
-| Finding | State on `release/1.1.0` |
+| Finding | State in v1.1.0 |
 |---|---|
 | F1 | **Fixed.** Null only when there is no `Item`; every `DynamoDbException` propagates |
 | F2 | **Fixed.** Dedupe (identical requests always; by key with `key_attributes`, last wins), 25 per call, `UnprocessedItems` retried (8 attempts, full jitter, 5 s cap), then `UnprocessedItemsException` with every request not written. Unencodable objects throw `UnencodableObjectsException` instead of being logged and skipped |
@@ -142,7 +142,7 @@ A `new Marshaler()` is built on every call (lines 62, 97, 130, 154, 196). The pa
 
   Ship this as a bug fix in a minor release. The only Composer consumer (risk-assessments) wants exactly this behaviour, because every caller there treats null as "absent".
 - **Effort:** S. **Risk:** low. Consumers now see 5xx where they used to see silent wrong data, and that's the point.
-- **Status:** fixed on `release/1.1.0` (see Status above).
+- **Status:** fixed in v1.1.0 (see Status above).
 - **Migration/infra:** none.
 
 **F2 — `saveObjects` can lose writes (AP-03)** · Correctness (latent)
@@ -159,7 +159,7 @@ A `new Marshaler()` is built on every call (lines 62, 97, 130, 154, 196). The pa
   Port holidays' loop (`microservice-holidays/src/Repository/AbstractDynamoDbRepository.php:57-80`) and its three tests (`tests/Functional/PublicHolidayRepositoryTest.php:61-100`). Add jitter and the key dedupe that holidays does in its subclass. The unencodable-object behaviour becomes an option: `'on_unencodable' => 'skip'` (the 1.x default, but now returned or thrown in aggregate after the batch) or `'throw'` (the 2.0 default). See `Table::batchWrite()` in the sketch below.
 - **Effort:** S. **Risk:** low.
 - **Migration/infra:** none.
-- **Status:** fixed on `release/1.1.0` (see Status above).
+- **Status:** fixed in v1.1.0 (see Status above).
 
 ### High
 
@@ -194,7 +194,7 @@ A `new Marshaler()` is built on every call (lines 62, 97, 130, 154, 196). The pa
 - **Why it matters:** consumers redirect after a save and then re-read the item (risk-assessments: `PerformController.php:120` → `:70`). An eventual read can return the pre-save state, and that breaks any version check built on F4. A strong read costs 1 RCU instead of 0.5 per 4 KB (DDB 01 §5.3.1; DDB 07 §4.2).
 - **Fix:** add a `consistent_read` option, default `false`, in 1.1.0, and a `consistent` argument on `Table::get()`, `Query::consistent()` and `batchGet()` in 2.0. Never allow it on a GSI query (ValidationException).
 - **Effort:** S.
-- **Status:** the 1.1.0 option is on `release/1.1.0`.
+- **Status:** the 1.1.0 option shipped in v1.1.0.
 
 **F6 — Dependency constraints and missing tests** · Hygiene
 - **Problem:** `composer.json:12-19, 37-42`:

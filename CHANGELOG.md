@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 (unreleased)
+## 1.1.0 (2026-11-13)
 
 No method signature has changed and every new option is optional. Two behaviour changes are bug fixes that callers may notice; read **Upgrading** first. Finding numbers refer to `DYNAMODB-REVIEW.md`.
 
