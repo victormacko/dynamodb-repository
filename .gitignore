@@ -8,3 +8,4 @@ package.tar
 /packages.json
 /.phpunit
 .idea
+.phpunit.cache

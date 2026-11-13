@@ -7,6 +7,28 @@ State of the repo at review time:
 - Tag `v1.0.1` points at `566bd52`, which is the commit `vte-addon-risk-assessments/composer.lock` installs from GitHub. So the tag was published even though the local tracking ref doesn't show the branch as pushed.
 - `composer.json` has one uncommitted change: `ramsey/uuid` is widened to `^3.9 || ^4.0`.
 
+## Status (updated 2026-11-13)
+
+1.1.0 is implemented on branch `release/1.1.0`. It is not tagged, pushed or published yet. The details are in `CHANGELOG.md`. The tests run with `vendor/bin/phpunit` (36 tests on `Aws\MockHandler`, no network).
+
+| Finding | State on `release/1.1.0` |
+|---|---|
+| F1 | **Fixed.** Null only when there is no `Item`; every `DynamoDbException` propagates |
+| F2 | **Fixed.** Dedupe (identical requests always; by key with `key_attributes`, last wins), 25 per call, `UnprocessedItems` retried (8 attempts, full jitter, 5 s cap), then `UnprocessedItemsException` with every request not written. Unencodable objects throw `UnencodableObjectsException` instead of being logged and skipped |
+| F3 | **Partly.** Bounded `queryAll()` (throws `ResultTooLarge`) plus `denormalizeItems()`; `convertResultsToObjectArray` is `@deprecated`. **Not done:** `queryPage()` with a signed cursor |
+| F4 | **Partly.** `condition_expression` / `expression_attribute_names` / `expression_attribute_values` on `saveObject` and `deleteByKey`; a failed condition throws `ConditionFailed`. The 2.0 `Table` API is not started |
+| F5 | **Fixed.** `consistent_read` option on `getOneOrNullById` |
+| F6 | **Partly.** `tests/`, `phpunit.xml.dist`, `VictorMacko\Tests\` autoload-dev. The dependency constraints are unchanged (still the 1.0.2 item) |
+| F7 | **Partly.** A shared `marshaler()`, and `marshalItem` for keys. Constructor injection waits for 2.0 |
+| F8 | Applies at fork-migration time |
+| `batchGet` | **Not done** (it is in the 1.1.0 row of the migration table) |
+
+Where the implementation differs from this proposal:
+- **Dedupe by key needs the key attribute names**, and the base class has no key schema. `saveObjects()` and `batchWrite()` therefore take an optional `key_attributes`. Without it, only identical requests are collapsed; two different objects with the same key still make DynamoDB reject that batch with a `ValidationException`, which propagates.
+- **A put and a delete of the same key in one `batchWrite()`:** the last one wins. The sketch below throws instead. Last-wins gives the same result as sending the two requests one after the other.
+- **`on_unencodable`** takes `throw_after_write` (the default) or `throw_before_write`, rather than `skip` / `throw`. Both throw.
+- **Retries:** 8 attempts, as in holidays, rather than the sketch's 6.
+
 This is a **library**: it owns no tables. Because of that, the review is a redesign proposal. It measures the package against two parts of the KB:
 - DDB 01 §5.2 and §7.5: don't use an ORM; write a thin, DynamoDB-shaped data layer.
 - DDB 06 §6.6: a PHP 8 key builder plus a thin repository.
@@ -120,6 +142,7 @@ A `new Marshaler()` is built on every call (lines 62, 97, 130, 154, 196). The pa
 
   Ship this as a bug fix in a minor release. The only Composer consumer (risk-assessments) wants exactly this behaviour, because every caller there treats null as "absent".
 - **Effort:** S. **Risk:** low. Consumers now see 5xx where they used to see silent wrong data, and that's the point.
+- **Status:** fixed on `release/1.1.0` (see Status above).
 - **Migration/infra:** none.
 
 **F2 — `saveObjects` can lose writes (AP-03)** · Correctness (latent)
@@ -136,6 +159,7 @@ A `new Marshaler()` is built on every call (lines 62, 97, 130, 154, 196). The pa
   Port holidays' loop (`microservice-holidays/src/Repository/AbstractDynamoDbRepository.php:57-80`) and its three tests (`tests/Functional/PublicHolidayRepositoryTest.php:61-100`). Add jitter and the key dedupe that holidays does in its subclass. The unencodable-object behaviour becomes an option: `'on_unencodable' => 'skip'` (the 1.x default, but now returned or thrown in aggregate after the batch) or `'throw'` (the 2.0 default). See `Table::batchWrite()` in the sketch below.
 - **Effort:** S. **Risk:** low.
 - **Migration/infra:** none.
+- **Status:** fixed on `release/1.1.0` (see Status above).
 
 ### High
 
@@ -170,6 +194,7 @@ A `new Marshaler()` is built on every call (lines 62, 97, 130, 154, 196). The pa
 - **Why it matters:** consumers redirect after a save and then re-read the item (risk-assessments: `PerformController.php:120` → `:70`). An eventual read can return the pre-save state, and that breaks any version check built on F4. A strong read costs 1 RCU instead of 0.5 per 4 KB (DDB 01 §5.3.1; DDB 07 §4.2).
 - **Fix:** add a `consistent_read` option, default `false`, in 1.1.0, and a `consistent` argument on `Table::get()`, `Query::consistent()` and `batchGet()` in 2.0. Never allow it on a GSI query (ValidationException).
 - **Effort:** S.
+- **Status:** the 1.1.0 option is on `release/1.1.0`.
 
 **F6 — Dependency constraints and missing tests** · Hygiene
 - **Problem:** `composer.json:12-19, 37-42`:
