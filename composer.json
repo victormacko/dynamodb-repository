@@ -12,7 +12,7 @@
     "require": {
         "php": ">=8.0",
         "aws/aws-sdk-php-symfony": "^2.2",
-        "ramsey/uuid": "^3.9",
+        "ramsey/uuid": "^3.9 || ^4.0",
         "symfony/monolog-bundle": "*",
         "symfony/options-resolver": "^5.0||^6.0||7.0||8.0",
         "symfony/serializer-pack": "*"
